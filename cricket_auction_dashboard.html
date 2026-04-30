@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cricket Auction Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e0a;
+    --surface: #111611;
+    --card: #161d16;
+    --border: #1e2b1e;
+    --accent: #22c55e;
+    --accent2: #f59e0b;
+    --accent3: #ef4444;
+    --text: #e8f5e8;
+    --muted: #6b7f6b;
+    --highlight: #2d3f2d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* cricket field pattern background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% 50%, rgba(34,197,94,0.04) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(34,197,94,0.015) 60px, rgba(34,197,94,0.015) 61px),
+      repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(34,197,94,0.015) 60px, rgba(34,197,94,0.015) 61px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 3rem;
+  }
+
+  /* ── HEADER ── */
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    position: relative;
+  }
+
+  .league-badge {
+    display: inline-block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--accent2);
+    background: rgba(245,158,11,0.1);
+    border: 1px solid rgba(245,158,11,0.25);
+    padding: 4px 14px;
+    border-radius: 2px;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    letter-spacing: 0.05em;
+    line-height: 0.9;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+  }
+
+  h1 span {
+    color: var(--accent);
+    display: block;
+  }
+
+  .header-sub {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    margin-top: 0.75rem;
+  }
+
+  .divider {
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin: 1.25rem auto;
+  }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  .stat-divider {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+  }
+
+  /* ── KEYBOARD HINT ── */
+  .kbd-hint {
+    text-align: center;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 10px;
+    margin-bottom: 2.5rem;
+  }
+
+  .tile {
+    position: relative;
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.18s ease;
+    overflow: hidden;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(34,197,94,0.08) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.18s;
+  }
+
+  .tile::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.18s ease;
+  }
+
+  .tile:hover {
+    border-color: rgba(34,197,94,0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+
+  .tile:hover::before { opacity: 1; }
+  .tile:hover::after { transform: scaleX(1); }
+
+  .tile:hover .tile-num {
+    color: var(--accent);
+  }
+
+  .tile.active {
+    border-color: var(--accent);
+    background: rgba(34,197,94,0.1);
+    transform: scale(0.94);
+  }
+
+  .tile.no-link {
+    border-color: var(--border);
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .tile.no-link:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--border);
+  }
+
+  .tile.no-link::after { display: none; }
+
+  .tile-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    line-height: 1;
+    transition: color 0.18s;
+  }
+
+  .tile-label {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  .tile.has-link .tile-label {
+    color: rgba(34,197,94,0.5);
+  }
+
+  /* stagger animation */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .tile:nth-child(1)  { animation-delay: 0.03s }
+  .tile:nth-child(2)  { animation-delay: 0.06s }
+  .tile:nth-child(3)  { animation-delay: 0.09s }
+  .tile:nth-child(4)  { animation-delay: 0.12s }
+  .tile:nth-child(5)  { animation-delay: 0.15s }
+  .tile:nth-child(6)  { animation-delay: 0.18s }
+  .tile:nth-child(7)  { animation-delay: 0.21s }
+  .tile:nth-child(8)  { animation-delay: 0.24s }
+  .tile:nth-child(9)  { animation-delay: 0.27s }
+  .tile:nth-child(10) { animation-delay: 0.30s }
+  .tile:nth-child(11) { animation-delay: 0.33s }
+  .tile:nth-child(12) { animation-delay: 0.36s }
+  .tile:nth-child(13) { animation-delay: 0.39s }
+  .tile:nth-child(14) { animation-delay: 0.42s }
+  .tile:nth-child(15) { animation-delay: 0.45s }
+  .tile:nth-child(16) { animation-delay: 0.48s }
+  .tile:nth-child(17) { animation-delay: 0.51s }
+  .tile:nth-child(18) { animation-delay: 0.54s }
+  .tile:nth-child(19) { animation-delay: 0.57s }
+  .tile:nth-child(20) { animation-delay: 0.60s }
+  .tile:nth-child(21) { animation-delay: 0.63s }
+  .tile:nth-child(22) { animation-delay: 0.66s }
+  .tile:nth-child(23) { animation-delay: 0.69s }
+  .tile:nth-child(24) { animation-delay: 0.72s }
+  .tile:nth-child(25) { animation-delay: 0.75s }
+  .tile:nth-child(26) { animation-delay: 0.78s }
+  .tile:nth-child(27) { animation-delay: 0.81s }
+  .tile:nth-child(28) { animation-delay: 0.84s }
+  .tile:nth-child(29) { animation-delay: 0.87s }
+  .tile:nth-child(30) { animation-delay: 0.90s }
+  .tile:nth-child(31) { animation-delay: 0.93s }
+  .tile:nth-child(32) { animation-delay: 0.96s }
+  .tile:nth-child(33) { animation-delay: 0.99s }
+
+  /* ── JUMP TO BAR ── */
+  .jump-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 2.5rem;
+  }
+
+  .jump-label {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .jump-input {
+    width: 72px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    padding: 6px 10px;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .jump-input:focus {
+    border-color: var(--accent);
+  }
+
+  .jump-btn {
+    background: var(--accent);
+    color: #0a0e0a;
+    border: none;
+    border-radius: 4px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 8px 18px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .jump-btn:hover { background: #16a34a; }
+  .jump-btn:active { transform: scale(0.96); }
+
+  /* ── LINK EDITOR ── */
+  .editor-toggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .editor-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    padding: 6px 18px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .editor-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .editor-panel {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .editor-panel.open { display: block; }
+
+  .editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+
+  .editor-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .editor-note {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+    padding: 10px 12px;
+    background: rgba(245,158,11,0.06);
+    border-left: 2px solid var(--accent2);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .editor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+  }
+
+  .ed-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ed-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    color: var(--accent);
+    min-width: 26px;
+    text-align: right;
+  }
+
+  .ed-input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 11px;
+    padding: 5px 8px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .ed-input:focus { border-color: var(--accent); }
+  .ed-input::placeholder { color: var(--muted); font-size: 10px; }
+
+  /* ── STATUS ── */
+  #status {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    min-height: 18px;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+  }
+
+  #status.ok  { color: var(--accent); }
+  #status.err { color: var(--accent3); }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--card);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 13px;
+    color: var(--accent);
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 0.05em;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 999;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header>
+    <div class="league-badge">Cricket Auction Season 6</div>
+    <h1>Player <span>Auction</span></h1>
+    <div class="divider"></div>
+    
+
+  <div id="grid" class="grid"></div>
+
+  <div id="status"></div>
+
+  <div class="jump-bar" style="margin-top:1.25rem">
+    <span class="jump-label">Jump to player</span>
+    <input type="number" class="jump-input" id="jump-input" min="1" max="33" placeholder="1–33" />
+    <button class="jump-btn" onclick="jumpTo()">Open</button>
+  </div>
+
+  <div class="editor-toggle">
+    <button class="editor-btn" id="editor-btn" onclick="toggleEditor()">
+      + Add Google Slides Links
+    </button>
+  </div>
+
+  <div class="editor-panel" id="editor-panel">
+    <div class="editor-header">
+      <span class="editor-title">Google Slides Links</span>
+      <button class="editor-btn" onclick="toggleEditor()">Done</button>
+    </div>
+    <div class="editor-note">
+      In Google Slides: click Share (top right) → change access to "Anyone with the link" → copy link → paste below.<br>
+      To open in present mode, links ending in <strong>/edit</strong> will be changed to <strong>/present</strong> automatically.
+    </div>
+    <div class="editor-grid" id="editor-grid"></div>
+  </div>
+
+  <footer>
+    Cricket Auction Dashboard &nbsp;·&nbsp; Press a number key to open player slides
+  </footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'cricket_auction_links_v1';
+const COUNT = 33;
+
+function loadLinks() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch(e) { return {}; }
+}
+
+function saveLinks(links) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(links)); }
+  catch(e) {}
+}
+
+let links = {
+  1:  "https://docs.google.com/presentation/d/1TaF3qlAAK0acNv_kUSR4f-2BobZrrePvdaYWl2LF_2I/edit?usp=sharing",
+  2:  "https://docs.google.com/presentation/d/1cr0QUQ37g1jjs-QW9NEII8VsoJYKeI89RImlp7-Dc3s/edit?usp=drive_link",
+  3:  "https://docs.google.com/presentation/d/1fGMpcG0J-jcMQhpw0Kc3zRb2fDST9R06inBkeI-rbg4/edit?usp=drive_link",
+  4:  "https://docs.google.com/presentation/d/1Wp_yLwVWtrCHq3xFrucByGUfzWghZtoXBh5dC2KIhZA/edit?usp=drive_link",
+  5:  "https://docs.google.com/presentation/d/1SA6s781ZjxxZn3O2AncDVvL6Bt8o8Aapse__iFBuUWs/edit?usp=drive_link",
+  6:  "https://docs.google.com/presentation/d/1PV8js0qkGsskCP9FyjkiwTAQhvySN-tcXellqtC_52A/edit?usp=drive_link",
+  7:  "https://docs.google.com/presentation/d/YOUR_LINK_7",
+  8:  "https://docs.google.com/presentation/d/YOUR_LINK_8",
+  9:  "https://docs.google.com/presentation/d/YOUR_LINK_9",
+  10: "https://docs.google.com/presentation/d/YOUR_LINK_10",
+  11: "https://docs.google.com/presentation/d/YOUR_LINK_11",
+  12: "https://docs.google.com/presentation/d/YOUR_LINK_12",
+  13: "https://docs.google.com/presentation/d/YOUR_LINK_13",
+  14: "https://docs.google.com/presentation/d/YOUR_LINK_14",
+  15: "https://docs.google.com/presentation/d/YOUR_LINK_15",
+  16: "https://docs.google.com/presentation/d/YOUR_LINK_16",
+  17: "https://docs.google.com/presentation/d/YOUR_LINK_17",
+  18: "https://docs.google.com/presentation/d/YOUR_LINK_18",
+  19: "https://docs.google.com/presentation/d/YOUR_LINK_19",
+  20: "https://docs.google.com/presentation/d/YOUR_LINK_20",
+  21: "https://docs.google.com/presentation/d/YOUR_LINK_21",
+  22: "https://docs.google.com/presentation/d/YOUR_LINK_22",
+  23: "https://docs.google.com/presentation/d/YOUR_LINK_23",
+  24: "https://docs.google.com/presentation/d/YOUR_LINK_24",
+  25: "https://docs.google.com/presentation/d/YOUR_LINK_25",
+  26: "https://docs.google.com/presentation/d/YOUR_LINK_26",
+  27: "https://docs.google.com/presentation/d/YOUR_LINK_27",
+  28: "https://docs.google.com/presentation/d/YOUR_LINK_28",
+  29: "https://docs.google.com/presentation/d/YOUR_LINK_29",
+  30: "https://docs.google.com/presentation/d/YOUR_LINK_30",
+  31: "https://docs.google.com/presentation/d/YOUR_LINK_31",
+  32: "https://docs.google.com/presentation/d/YOUR_LINK_32",
+  33: "https://docs.google.com/presentation/d/15VCB-OixLvt8nwKrFJtuGwZnqbo9ikKbYm9TyNAcSW8/edit?usp=sharing"
+};
+
+function getLink(n) { return links[n] || ''; }
+
+function setLink(n, url) {
+  links[n] = url.trim();
+  saveLinks(links);
+  updateGrid();
+  updateStats();
+}
+
+function convertToPresent(url) {
+  if (!url) return '';
+  return url.replace('/edit', '/present').replace(/\?.*$/, '') + '?rm=minimal';
+}
+
+function openSlide(n) {
+  const url = getLink(n);
+  if (!url) {
+    showStatus(`No link set for Player ${n} — click "Add Google Slides Links" below`, 'err');
+    flashTile(n, true);
+    showToast(`Player ${n} — no link set yet`);
+    return;
+  }
+  showStatus(`Opening Player ${n} slides...`, 'ok');
+  flashTile(n, false);
+  showToast(`Opening Player ${n}`);
+  window.open(convertToPresent(url), '_blank');
+}
+
+function flashTile(n, err) {
+  const tile = document.querySelector(`.tile[data-n="${n}"]`);
+  if (!tile) return;
+  tile.classList.add('active');
+  if (err) tile.style.borderColor = 'var(--accent3)';
+  setTimeout(() => {
+    tile.classList.remove('active');
+    tile.style.borderColor = '';
+  }, 500);
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = type || '';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.textContent = ''; el.className = ''; }, 3000);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function updateStats() {
+  const linked = Object.values(links).filter(v => v).length;
+  document.getElementById('linked-count').textContent = linked;
+  document.getElementById('pending-count').textContent = COUNT - linked;
+}
+
+function updateGrid() {
+  document.querySelectorAll('.tile').forEach(tile => {
+    const n = parseInt(tile.dataset.n);
+    const has = !!getLink(n);
+    tile.classList.toggle('has-link', has);
+    tile.classList.toggle('no-link', !has);
+    tile.querySelector('.tile-label').textContent = has ? 'ready' : 'no link';
+  });
+}
+
+function buildGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= COUNT; i++) {
+    const has = !!getLink(i);
+    const tile = document.createElement('div');
+    tile.className = 'tile' + (has ? ' has-link' : ' no-link');
+    tile.dataset.n = i;
+    tile.title = has ? `Open Player ${i} slides` : `No link for Player ${i}`;
+    tile.innerHTML = `<span class="tile-num">${i}</span><span class="tile-label">${has ? 'ready' : 'no link'}</span>`;
+    tile.addEventListener('click', () => openSlide(i));
+    grid.appendChild(tile);
+  }
+}
+
+function buildEditor() {
+  const eg = document.getElementById('editor-grid');
+  eg.innerHTML = '';
+  for (let i = 1; i <= COUNT; i++) {
+    const row = document.createElement('div');
+    row.className = 'ed-row';
+    const num = document.createElement('span');
+    num.className = 'ed-num';
+    num.textContent = i;
+    const inp = document.createElement('input');
+    inp.className = 'ed-input';
+    inp.type = 'url';
+    inp.placeholder = 'Paste Google Slides link...';
+    inp.value = getLink(i);
+    inp.dataset.n = i;
+    inp.addEventListener('input', e => {
+      setLink(parseInt(e.target.dataset.n), e.target.value);
+    });
+    row.appendChild(num);
+    row.appendChild(inp);
+    eg.appendChild(row);
+  }
+}
+
+function toggleEditor() {
+  const panel = document.getElementById('editor-panel');
+  const btn = document.getElementById('editor-btn');
+  const open = panel.classList.toggle('open');
+  btn.textContent = open ? '− Hide Link Editor' : '+ Add Google Slides Links';
+  if (open) buildEditor();
+}
+
+function jumpTo() {
+  const val = parseInt(document.getElementById('jump-input').value);
+  if (val >= 1 && val <= COUNT) {
+    openSlide(val);
+    document.getElementById('jump-input').value = '';
+  } else {
+    showStatus('Please enter a number between 1 and 33', 'err');
+  }
+}
+
+let typed = '', typedTimer = null;
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+
+  if (e.key === 'Escape') {
+    typed = '';
+    clearTimeout(typedTimer);
+    showStatus('Cancelled', '');
+    return;
+  }
+
+  if (e.key === 'Enter' && typed) {
+    clearTimeout(typedTimer);
+    const n = parseInt(typed);
+    if (n >= 1 && n <= COUNT) openSlide(n);
+    else showStatus(`Player ${typed} does not exist (1–33 only)`, 'err');
+    typed = '';
+    return;
+  }
+
+  if (e.key >= '0' && e.key <= '9') {
+    typed += e.key;
+    showStatus(`Player: ${typed}`, 'ok');
+    clearTimeout(typedTimer);
+
+    const n = parseInt(typed);
+    if (typed.length === 2) {
+      clearTimeout(typedTimer);
+      if (n >= 1 && n <= COUNT) openSlide(n);
+      else showStatus(`Player ${typed} does not exist (1–33 only)`, 'err');
+      typed = '';
+      return;
+    }
+
+    typedTimer = setTimeout(() => {
+      if (n >= 1 && n <= COUNT) openSlide(n);
+      else showStatus(`Player ${typed} does not exist (1–33 only)`, 'err');
+      typed = '';
+    }, 800);
+  }
+});
+
+document.getElementById('jump-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') jumpTo();
+});
+
+buildGrid();
+updateStats();
+</script>
+</body>
+</html>
